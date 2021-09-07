@@ -1,4 +1,9 @@
 """
+Note: CIT-GAN is built over StarGAN v2 to improve the performance
+Author of CIT-GAN: Shivangi Yadav
+Advisor: Dr. Arun Ross
+
+Reference:
 StarGAN v2
 Copyright (c) 2020-present NAVER Corp.
 
