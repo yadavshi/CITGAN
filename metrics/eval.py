@@ -1,4 +1,9 @@
 """
+Note: CIT-GAN is built over StarGAN v2 to improve the performance
+Author of CIT-GAN: Shivangi Yadav
+Advisor: Dr. Arun Ross
+
+Reference:
 StarGAN v2
 Copyright (c) 2020-present NAVER Corp.
 
@@ -70,7 +75,7 @@ def calculate_metrics(nets, args, step, mode):
                 for j in range(args.num_outs_per_domain):
                     if mode == 'latent':
                         z_trg = torch.randn(N, args.latent_dim).to(device)
-                        s_trg = nets.mapping_network(z_trg, y_trg)
+                        s_trg, _ = nets.style_encoder(z_trg, y_trg)
                     else:
                         try:
                             x_ref = next(iter_ref).to(device)
@@ -80,7 +85,7 @@ def calculate_metrics(nets, args, step, mode):
 
                         if x_ref.size(0) > N:
                             x_ref = x_ref[:N]
-                        s_trg = nets.style_encoder(x_ref, y_trg)
+                        s_trg, _ = nets.style_encoder(x_ref, y_trg)
 
                     x_fake = nets.generator(x_src, s_trg, masks=masks)
                     group_of_images.append(x_fake)
