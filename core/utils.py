@@ -91,12 +91,12 @@ def translate_using_latent(nets, args, x_src, y_trg_list, z_trg_list, psi, filen
     for i, y_trg in enumerate(y_trg_list):
         z_many = torch.randn(10000, latent_dim).to(x_src.device)
         y_many = torch.LongTensor(10000).to(x_src.device).fill_(y_trg[0])
-        s_many = nets.mapping_network(z_many, y_many)
+        s_many, _ = nets.style_encoder(z_many, y_many)
         s_avg = torch.mean(s_many, dim=0, keepdim=True)
         s_avg = s_avg.repeat(N, 1)
 
         for z_trg in z_trg_list:
-            s_trg = nets.mapping_network(z_trg, y_trg)
+            s_trg, _ = nets.style_encoder(z_trg, y_trg)
             s_trg = torch.lerp(s_avg, s_trg, psi)
             x_fake = nets.generator(x_src, s_trg, masks=masks)
             x_concat += [x_fake]
@@ -239,12 +239,12 @@ def video_latent(nets, args, x_src, y_list, z_list, psi, fname):
     for i, y_trg in enumerate(y_list):
         z_many = torch.randn(10000, latent_dim).to(x_src.device)
         y_many = torch.LongTensor(10000).to(x_src.device).fill_(y_trg[0])
-        s_many = nets.mapping_network(z_many, y_many)
+        s_many, _ = nets.style_encoder(z_many, y_many)
         s_avg = torch.mean(s_many, dim=0, keepdim=True)
         s_avg = s_avg.repeat(x_src.size(0), 1)
 
         for z_trg in z_list:
-            s_trg = nets.mapping_network(z_trg, y_trg)
+            s_trg, _ = nets.style_encoder(z_trg, y_trg)
             s_trg = torch.lerp(s_avg, s_trg, psi)
             s_list.append(s_trg)
 
