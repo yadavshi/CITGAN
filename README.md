@@ -5,16 +5,23 @@ _S. Yadav and A. Ross, “CIT-GAN: Cyclic Image Translation Generative Adversari
 
 
 Clone this repository:
+
 git clone https://github.com/yadavshi/CITGAN.git
+
 cd CITGAN/
 
 Install the dependencies:
 
 conda create -n CITGAN
+
 conda activate CITGAN
+
 conda install -y pytorch torchvision cudatoolkit -c pytorch
+
 conda install x264 ffmpeg -c conda-forge
+
 pip install opencv-python ffmpeg-python scikit-image
+
 pip install pillow scipy tqdm munch
 
 bash download.sh wing
