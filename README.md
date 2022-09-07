@@ -28,17 +28,10 @@ bash download.sh wing
 
 Run following commands:
 
-When Training for the first time:
-
-python main.py --mode train_style --img_size 256 --num_domains 3 --total_iters 300 --batch_size 32 --train_img_dir train_dir --val_img_dir val_dir
-               --checkpoint_dir checkpoint_dir
-
-python main.py --mode train --img_size 256 --num_domains 3 --total_iters 100000000 --batch_size 32 --train_img_dir train_dir --val_img_dir val_dir
-               --sample_dir ./expr/sample_dir --eval_dir ./expr/eval_dir --result_dir ./expr/result_dir --checkpoint_dir ./expr/checkpoint_dir
+python main.py --mode train --img_size 256 --num_domains 3
 (Look into main.py for more arguments' options)
 
 When resuming training:
 
-python main.py --mode train --img_size 256 --num_domains 3 --total_iters 100000000 --batch_size 32 --train_img_dir train_dir --val_img_dir val_dir
-               --sample_dir ./expr/sample_dir --eval_dir ./expr/eval_dir --result_dir ./expr/result_dir --checkpoint_dir ./expr/checkpoint_dir --resume_iter 10000
+python main.py --mode train --img_size 256 --num_domains 3 --resume_iter 10000
 
