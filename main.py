@@ -43,13 +43,18 @@ def main(args):
     if args.mode == 'train_style':
         solver2 = Solver2(args)
         assert len(subdirs(args.train_img_dir)) == args.num_domains
-        loaders = Munch(src=get_train_loader(root=args.train_img_dir,
+        loaders1 = Munch(src=get_train_loader(root=args.train_img_dir,
                                              which='source',
                                              img_size=args.img_size,
                                              batch_size=args.batch_size,
                                              prob=args.randcrop_prob,
                                              num_workers=args.num_workers))
-        solver2.train(loaders)
+        loaders2 = Munch(val=get_test_loader(root=args.val_img_dir,
+                                            img_size=args.img_size,
+                                            batch_size=args.val_batch_size,
+                                            shuffle=True,
+                                            num_workers=args.num_workers))
+        solver2.train(loaders1, loaders2)
     
     elif args.mode == 'test_detector':
         #solver3 = Solver3(args)
@@ -62,6 +67,7 @@ def main(args):
         solver.test_detector(loaders)
     
     elif args.mode == 'train':
+        #pdb.set_trace()
         assert len(subdirs(args.train_img_dir)) == args.num_domains
         assert len(subdirs(args.val_img_dir)) == args.num_domains
         loaders = Munch(src=get_train_loader(root=args.train_img_dir,
@@ -119,6 +125,8 @@ if __name__ == '__main__':
                         help='Hidden dimension of mapping network')
     parser.add_argument('--style_dim', type=int, default=16,
                         help='Style code dimension')
+    parser.add_argument('--iter_gen', type=int, default=3,
+                        help='Number of iterations for Generator per epoch')
 
     # weight for objective functions
     parser.add_argument('--lambda_reg', type=float, default=1,
@@ -139,11 +147,11 @@ if __name__ == '__main__':
                         help='Probabilty of using random-resized cropping')
     parser.add_argument('--total_iters', type=int, default=100000000,
                         help='Number of total iterations')
-    parser.add_argument('--resume_iter', type=int, default=0,
+    parser.add_argument('--resume_iter', type=int, default=30000,
                         help='Iterations to resume training/testing')
     parser.add_argument('--batch_size', type=int, default=8,
                         help='Batch size for training')
-    parser.add_argument('--val_batch_size', type=int, default=32,
+    parser.add_argument('--val_batch_size', type=int, default=8,
                         help='Batch size for validation')
     parser.add_argument('--lr', type=float, default=1e-4,
                         help='Learning rate for D, E and G')
@@ -155,9 +163,8 @@ if __name__ == '__main__':
                         help='Decay rate for 2nd moment of Adam')
     parser.add_argument('--weight_decay', type=float, default=1e-4,
                         help='Weight decay for optimizer')
-    parser.add_argument('--num_outs_per_domain', type=int, default=2,
+    parser.add_argument('--num_outs_per_domain', type=int, default=8,
                         help='Number of generated images per domain during sampling')
-
     # misc
     parser.add_argument('--mode', type=str, required=True,
                         choices=['train_style', 'train', 'test_detector', 'sample', 'eval', 'align'],
