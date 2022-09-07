@@ -10,6 +10,8 @@ git clone https://github.com/yadavshi/CITGAN.git
 
 cd CITGAN/
 
+
+
 Install the dependencies:
 
 conda create -n CITGAN
@@ -26,6 +28,9 @@ pip install pillow scipy tqdm munch
 
 bash download.sh wing
 
+
+
+
 Run following commands:
 
 python main.py --mode train --img_size 256 --num_domains 3
@@ -34,4 +39,8 @@ python main.py --mode train --img_size 256 --num_domains 3
 When resuming training:
 
 python main.py --mode train --img_size 256 --num_domains 3 --resume_iter 10000
+
+
+
+Model is available at: https://drive.google.com/drive/u/2/folders/1sGi9YXmvSUUbZzUzyVN9DKhCpxticTJj
 
