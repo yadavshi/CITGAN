@@ -4,13 +4,7 @@ Author of CIT-GAN: Shivangi Yadav
 Advisor: Dr. Arun Ross
 
 Reference:
-StarGAN v2
-Copyright (c) 2020-present NAVER Corp.
-
-This work is licensed under the Creative Commons Attribution-NonCommercial
-4.0 International License. To view a copy of this license, visit
-http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to
-Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+StarGAN v2: https://github.com/clovaai/stargan-v2/
 """
 
 import os
@@ -63,11 +57,11 @@ class Solver(nn.Module):
                     weight_decay=args.weight_decay)
 
             self.ckptios = [
-                CheckpointIO(ospj(args.checkpoint_dir + '\\' + "{:06d}_nets.ckpt"), data_parallel=True, **self.nets),
-                CheckpointIO(ospj(args.checkpoint_dir + '\\' + "{:06d}_nets_ema.ckpt"), data_parallel=True, **self.nets_ema),
-                CheckpointIO(ospj(args.checkpoint_dir + '\\' + "{:06d}_optims.ckpt"), **self.optims)]
+                CheckpointIO(ospj(args.checkpoint_dir, "{:06d}_nets.ckpt"), data_parallel=True, **self.nets),
+                CheckpointIO(ospj(args.checkpoint_dir, "{:06d}_nets_ema.ckpt"), data_parallel=True, **self.nets_ema),
+                CheckpointIO(ospj(args.checkpoint_dir, "{:06d}_optims.ckpt"), **self.optims)]
         else:
-            self.ckptios = [CheckpointIO(Path(ospj(args.checkpoint_dir + '\\' + "{:06d}_nets_ema.ckpt")), data_parallel=True, **self.nets_ema)]
+            self.ckptios = [CheckpointIO(Path(ospj(args.checkpoint_dir, "{:06d}_nets_ema.ckpt")), data_parallel=True, **self.nets_ema)]
 
         self.to(self.device)
         for name, network in self.named_children():
@@ -97,28 +91,29 @@ class Solver(nn.Module):
         # fetch random validation images for debugging
         fetcher = InputFetcher(loaders.src, loaders.ref, args.latent_dim, 'train')
         fetcher_val = InputFetcher(loaders.val, None, args.latent_dim, 'val')
+        #pdb.set_trace()
         inputs_val = next(fetcher_val)
 
         # resume training if necessary
         if args.resume_iter > 0:
             self._load_checkpoint(args.resume_iter)
         #pdb.set_trace()
-        
+        #
         # Uncomment this when training CIT-GAN for first time to load pre-trained Styling Network
-        '''
-        if torch.cuda.is_available():
-            module_dict = torch.load('D:\\cit-gan\\codes\\expr\\checkpoints-style\\000158_nets_prestyle.ckpt')
-        else:
-            module_dict = torch.load('D:\\cit-gan\\codes\\expr\\checkpoints-style\\000158_nets_prestyle.ckpt', map_location=torch.device('cpu'))
-
-        for name, module in module_dict.items():
-            if 1:
-                self.nets.style_encoder.module.load_state_dict(module_dict[name])
-                self.nets_ema.style_encoder.module.load_state_dict(module_dict[name])
-            else:
-                self.nets.style_encoder.load_state_dict(module_dict[name])
-                self.nets_ema.style_encoder.load_state_dict(module_dict[name])
-        '''
+        #
+        #if torch.cuda.is_available():
+        #    module_dict = torch.load('D:\\cit-gan\\codes\\expr\\checkpoints-style2\\000017_nets_prestyle.ckpt')
+        #else:
+        #    module_dict = torch.load('D:\\cit-gan\\codes\\expr\\checkpoints-style2\\000017_nets_prestyle.ckpt', map_location=torch.device('cpu'))
+        #
+        #for name, module in module_dict.items():
+        #    if 1:
+        #        self.nets.style_encoder.module.load_state_dict(module_dict[name])
+        #        self.nets_ema.style_encoder.module.load_state_dict(module_dict[name])
+        #    else:
+        #        self.nets.style_encoder.load_state_dict(module_dict[name])
+        #        self.nets_ema.style_encoder.load_state_dict(module_dict[name])
+        
         
 
         # remember the initial value of ds weight
@@ -127,6 +122,8 @@ class Solver(nn.Module):
         print('Start training...')
         start_time = time.time()
         
+        #pdb.set_trace()
+
         for i in tqdm(range(args.resume_iter, args.total_iters)):
             # fetch images and labels
             sleep(3)
@@ -160,7 +157,20 @@ class Solver(nn.Module):
             d_loss.backward()
             optims.discriminator.step()
 
+
+            # train Style Network
+            print("Training Style Network")
+            for sty_iter in range(0, 10):
+                #print("Training Sty.... {}", sty_iter)
+                sty_loss = compute_s_loss(
+                    nets, args, x_real, y_org)
+                self._reset_grad()
+                sty_loss.backward()
+                optims.style_encoder.step()
+
+
             # train the generator
+            #for i in range(0, args.iter_gen):
             print("Training Generator")
             g_loss, g_losses_latent = compute_g_loss(
                 nets, args, x_real, y_org, y_trg, z_trgs=[z_trg, z_trg2], masks=masks)
@@ -170,6 +180,7 @@ class Solver(nn.Module):
             #optims.mapping_network.step()
             #optims.style_encoder.step()
 
+
             g_loss, g_losses_ref = compute_g_loss(
                 nets, args, x_real, y_org, y_trg, x_refs=[x_ref, x_ref2], masks=masks)
             self._reset_grad()
@@ -178,8 +189,8 @@ class Solver(nn.Module):
 
             # compute moving average of network parameters
             moving_average(nets.generator, nets_ema.generator, beta=0.999)
+            moving_average(nets.style_encoder, nets_ema.style_encoder, beta=0.999)
             #moving_average(nets.mapping_network, nets_ema.mapping_network, beta=0.999)
-            #moving_average(nets.style_encoder, nets_ema.style_encoder, beta=0.999)
 
             # decay weight for diversity sensitive loss
             if args.lambda_ds > 0:
@@ -219,8 +230,23 @@ class Solver(nn.Module):
         nets_ema = self.nets_ema
         
         # resume training if necessary
+        
         if args.resume_iter > 0:
             self._load_checkpoint(args.resume_iter)
+        
+        
+        #if torch.cuda.is_available():
+        #    module_dict = torch.load('D:\\cit-gan\\codes\\expr\\checkpoints-style2\\000017_nets_prestyle.ckpt')
+        #else:
+        #    module_dict = torch.load('D:\\cit-gan\\codes\\expr\\checkpoints-style2\\000017_nets_prestyle.ckpt', map_location=torch.device('cpu'))
+
+        #for name, module in module_dict.items():
+        #    if 1:
+        #        self.nets.style_encoder.module.load_state_dict(module_dict[name])
+        #        self.nets_ema.style_encoder.module.load_state_dict(module_dict[name])
+        #    else:
+        #        self.nets.style_encoder.load_state_dict(module_dict[name])
+        #        self.nets_ema.style_encoder.load_state_dict(module_dict[name])
 
         # remember the initial value of ds weight
         initial_lambda_ds = args.lambda_ds
@@ -235,9 +261,9 @@ class Solver(nn.Module):
             running_corrects = 0.0
             
             for j, inputs in tqdm(enumerate(loaders.val)):
-                #pdb.set_trace()
+                pdb.set_trace()
                 sleep(3)
-                x_real, y_org = inputs
+                x_real, y_org, path = inputs
                 x_real = x_real.cuda()
                 y_org = y_org.cuda()
                 
@@ -355,6 +381,15 @@ def compute_g_loss(nets, args, x_real, y_org, y_trg, z_trgs=None, x_refs=None, m
                        ds=loss_cls.item(),
                        cyc=loss_cyc.item())
 
+
+def compute_s_loss(nets, args, x_real, y_org, cls_loss = nn.CrossEntropyLoss()):
+    #pdb.set_trace()
+    x_real.requires_grad_()
+    _, o_real = nets.style_encoder(x_real, y_org)
+    #pdb.set_trace()
+    _, preds = torch.max(o_real, 1)
+    loss = cls_loss(o_real, y_org)
+    return loss
 
 def moving_average(model, model_test, beta=0.999):
     for param, param_test in zip(model.parameters(), model_test.parameters()):
